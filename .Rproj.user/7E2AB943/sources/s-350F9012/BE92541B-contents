@@ -36,7 +36,11 @@ cond.inf <- function(model,Z,param,alg="loess",
   fitted.coef = coefs[param]
   
   # sample splitting for cross fitting
-  fold1 = ifelse(is.null(folds[[1]]), sample(1:n, floor(n/2)), folds[[1]]) 
+  if (is.null(folds)){
+    fold1 = sample(1:n, floor(n/2)) 
+  }else{
+    fold1 = folds[[1]]
+  } 
   fold2 = setdiff(1:n, fold1)
   fit.Zr = rep(0, n)
   
