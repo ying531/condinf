@@ -1,0 +1,4 @@
+Package: CondInf
+Type: Package
+Title: Package for Conditional Inference 
+Version: 0.0.1
