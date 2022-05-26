@@ -6,22 +6,10 @@ R package that implements conditional inference of parameters from lm and glm mo
 1. The [devtools](https://github.com/hadley/devtools) package has to be installed. You can install it using `install.packages("devtools")`.
 2. The latest development version can then be installied using `devtools::install_github("ying531/condinf")`.
 
+## Helper
 
+##### Usage
 
-### Helper
-
-| Arguments      | Description                                                  |
-| -------------- | ------------------------------------------------------------ |
-| `model`        | An object returned from lm() or glm() functions              |
-| `Z`            | A dataframe for the conditioning set                         |
-| `alg`          | Optinal, a string for name of algorithm, current options are 'loess' and 'grf' |
-| `random.seed`  | Optional, random seed for sample splitting                   |
-| `other.params` | Optional, other parameters for the regression algorithm; can include span and degree for loess |
-| `folds`        | Optional, a list of two folds of indices for sample splitting; can be useful to control sample splitting |
-
-To use `alg = 'grf'` as the regressor, the R package `grf` is required to be installed.
-
-## Usage
 
 ```
 cond.inf(
@@ -34,6 +22,30 @@ cond.inf(
   folds = NULL
 )
 ```
+
+| Arguments      | Description                                                  |
+| -------------- | ------------------------------------------------------------ |
+| `model`        | An object returned from lm() or glm() functions              |
+| `Z`            | A dataframe for the conditioning set                         |
+| `alg`          | Optinal, a string for name of algorithm, current options are 'loess' and 'grf' |
+| `random.seed`  | Optional, random seed for sample splitting                   |
+| `other.params` | Optional, other parameters for the regression algorithm; can include span and degree for loess |
+| `folds`        | Optional, a list of two folds of indices for sample splitting; can be useful to control sample splitting |
+
+To use `alg = 'grf'` as the regressor, the R package `grf` is required to be installed.
+
+| Output         | Description                                                  |
+| -------------- | ------------------------------------------------------------ |
+| `cond.std.err` | Estimated standard error for inference of conditional parameters |
+| `std.err`      | Estimated standard error for inference of super-population parameters |
+| `fitted.coef`  | Fitted (empirical) coefficient from the model                |
+| `cond.ci.low`  | Lower 0.95-confidence bound for conditional parameter        |
+| `cond.ci.upp`  | Upper 0.95-confidence bound for conditional parameter        |
+
+
+
+## Examples
+
 
 ### Conditional inference
 
