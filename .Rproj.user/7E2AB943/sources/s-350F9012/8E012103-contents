@@ -1,6 +1,0 @@
-Package: CondInfer
-Type: Package
-Title: Conditional inference package
-Version: 0.0.1.0
-Encoding: UTF-8
-RoxygenNote: 7.2.0
