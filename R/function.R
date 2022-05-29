@@ -3,6 +3,7 @@
 #' Conditional inference for lm and glm models
 #' @param model An object returned from lm() or glm() functions
 #' @param Z A dataframe for the conditioning set
+#' @param param A vector of coefficients to conduct conditional inference; can be a mixture of string name and index
 #' @param alg Optinal, a string for name of algorithm, current options are 'loess' and 'grf'
 #' @param random.seed Optional, random seed for sample splitting
 #' @param other.params Optional, other parameters for the regression algorithm; can include span and degree for loess
@@ -13,14 +14,15 @@
 #' Y = X %*% matrix(c(1,2,3,rep(0,10-3)), ncol=1) + rnorm(1000) * 0.1
 #' Z = data.frame(X[,1:2])
 #' lm.mdl = lm(Y~., data = data.frame(X))
-#' cond.inf(lm.mdl, Z, 2) 
+#' cond.inf(lm.mdl, Z, c("X2",2)) 
 #' 
 #' X = matrix(rnorm(1000*10), nrow=1000)
 #' logit.x = X %*% matrix(c(1,2,3,rep(0,10-3)), ncol=1) + X[,1]**2 + rnorm(1000) * 0.1
 #' Y = rbinom(n, 1, exp(logit.x)/(1+exp(logit.x)))
 #' Z = data.frame(X[,1:2])
 #' glm.mdl = glm(Y~., data = data.frame(X), family='binomial')
-#' cond.inf(glm.mdl, Z, 2)
+#' cond.inf(glm.mdl, Z, c(1,2))
+#' cond.inf(glm.mdl, Z, c("X1", "X2"))
 #' 
 #' @export
 cond.inf <- function(model,Z,param,alg="loess",
@@ -31,9 +33,22 @@ cond.inf <- function(model,Z,param,alg="loess",
     set.seed(random.seed)
   }
   
+  names = param
+  
+  for (i.par in 1:length(param)){
+    if (!is.na(suppressWarnings(as.integer(param[i.par])))){
+      names[i.par] = names(model$coefficients)[as.integer(param[i.par])]
+    }
+  }
+  
   n = length(model$fitted.values)
-  infl.vals = n * infl$coefficients[,param]
-  fitted.coef = coefs[param]
+  infl.vals = matrix(n * infl$coefficients[,names], ncol=length(param))
+  fitted.coef = coefs[names]
+  hat.sigmas = rep(0, length(param))
+  sup.sds = rep(0, length(param))
+  ci.lows = rep(0, length(param))
+  ci.his = rep(0, length(param))
+  
   
   # sample splitting for cross fitting
   if (is.null(folds)){
@@ -42,35 +57,54 @@ cond.inf <- function(model,Z,param,alg="loess",
     fold1 = folds[[1]]
   } 
   fold2 = setdiff(1:n, fold1)
-  fit.Zr = rep(0, n)
   
-  # LOESS regression
-  if (alg == 'loess'){
-    loess.span = ifelse(is.null(other.params$span), 0.75, other.params$span)
-    loess.deg = ifelse(is.null(other.params$degree), 2, other.params$degree) 
-    # cross-fit nonparametric regression models
-    Zr.1 = loess(infl.vals[fold2]~., data=data.frame(Z[fold2,]),
-                 span=loess.span, degree=loess.deg) 
-    Zr.2 = loess(infl.vals[fold1]~., data=data.frame(Z[fold1,]),
-                 span=loess.span, degree=loess.deg) 
-    fit.Zr[fold1] = predict(Zr.1, data.frame(Z[fold1,]))
-    fit.Zr[fold2] = predict(Zr.2, data.frame(Z[fold2,]))
+  for (i.par in 1:length(param)){
+    fit.Zr = infl.vals
+    
+    # LOESS regression
+    if (alg == 'loess'){
+      loess.span = ifelse(is.null(other.params$span), 0.75, other.params$span)
+      loess.deg = ifelse(is.null(other.params$degree), 2, other.params$degree) 
+      # cross-fit nonparametric regression models
+      Zr.1 = loess(infl.vals[fold2,i.par]~., data=data.frame(Z[fold2,]),
+                   span=loess.span, degree=loess.deg) 
+      Zr.2 = loess(infl.vals[fold1,i.par]~., data=data.frame(Z[fold1,]),
+                   span=loess.span, degree=loess.deg) 
+      fit.Zr[fold1,i.par] = predict(Zr.1, data.frame(Z[fold1,]))
+      fit.Zr[fold2,i.par] = predict(Zr.2, data.frame(Z[fold2,]))
+    }
+    
+    # random forest regression
+    if (alg == 'grf'){
+      # cross-fit nonparametric regression models
+      Zr.1 = regression_forest(data.frame(Z[fold2,]), infl.vals[fold2,i.par], num.threads=1)
+      Zr.2 = regression_forest(data.frame(Z[fold1,]), infl.vals[fold1,i.par], num.threads=1)
+      fit.Zr[fold1,i.par] = predict(Zr.1, data.frame(Z[fold1,]))$predictions
+      fit.Zr[fold2,i.par] = predict(Zr.2, data.frame(Z[fold2,]))$predictions
+    }
+    
+    hat.sigmas[i.par] = min(sd(infl.vals[,i.par]), 
+                            sd(infl.vals[,i.par] - fit.Zr[,i.par], na.rm=TRUE))
+    sup.sds[i.par] = sd(infl.vals[,i.par])
+    ci.lows[i.par] = fitted.coef[i.par] - qnorm(0.975) * hat.sigmas[i.par] / sqrt(n)
+    ci.his[i.par] = fitted.coef[i.par] + qnorm(0.975) * hat.sigmas[i.par] / sqrt(n)
   }
   
-  # random forest regression
-  if (alg == 'grf'){
-    # cross-fit nonparametric regression models
-    Zr.1 = regression_forest(data.frame(Z[fold2,]), infl.vals[fold2], num.threads=1)
-    Zr.2 = regression_forest(data.frame(Z[fold1,]), infl.vals[fold1], num.threads=1)
-    fit.Zr[fold1] = predict(Zr.1, data.frame(Z[fold1,]))$predictions
-    fit.Zr[fold2] = predict(Zr.2, data.frame(Z[fold2,]))$predictions
-  }
+  # print the results 
+  sup.p_vals = 2 * pnorm(abs(fitted.coef) / (sup.sds/sqrt(n)), lower.tail=FALSE)
+  cond.p_vals = 2 * pnorm(abs(fitted.coef) / (hat.sigmas/sqrt(n)), lower.tail=FALSE)
+  ret_table = cbind(fitted.coef, hat.sigmas, cond.p_vals, sup.sds, sup.p_vals)
+  colnames(ret_table) = c("Estimate", "Cond. Std. Error", "Cond. Pr(>|z|)",
+                          "Sup. Std. Error", "Sup. Pr(>|z|)")
+  rownames(ret_table) = names
   
-  hat.sigma = min(sd(infl.vals), sd(infl.vals - fit.Zr, na.rm=TRUE))
-  ci.low = fitted.coef - qnorm(0.975) * hat.sigma / sqrt(n)
-  ci.hi = fitted.coef + qnorm(0.975) * hat.sigma / sqrt(n)
+  cat("\n")
+  cat("Summary of conditional inference")
+  cat("\n\n")
+  print(ret_table)
+  cat("\n")
   
-  return(list("cond.std.err" = hat.sigma, "std.err" = sd(infl.vals),
+  invisible(list("cond.std.err" = hat.sigmas, "std.err" = sup.sds,
               "fitted.coef" = fitted.coef, 
-              "cond.ci.low" = ci.low, "cond.ci.upp" = ci.hi))
+              "cond.ci.low" = ci.lows, "cond.ci.upp" = ci.his))
 }

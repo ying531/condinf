@@ -19,6 +19,8 @@ cond.inf(
 
 \item{Z}{A dataframe for the conditioning set}
 
+\item{param}{A vector of coefficients to conduct conditional inference; can be a mixture of string name and index}
+
 \item{alg}{Optinal, a string for name of algorithm, current options are 'loess' and 'grf'}
 
 \item{random.seed}{Optional, random seed for sample splitting}
@@ -38,13 +40,14 @@ X = matrix(rnorm(1000*10), nrow=1000)
 Y = X \%*\% matrix(c(1,2,3,rep(0,10-3)), ncol=1) + rnorm(1000) * 0.1
 Z = data.frame(X[,1:2])
 lm.mdl = lm(Y~., data = data.frame(X))
-cond.inf(lm.mdl, Z, 2) 
+cond.inf(lm.mdl, Z, c("X2",2)) 
 
 X = matrix(rnorm(1000*10), nrow=1000)
 logit.x = X \%*\% matrix(c(1,2,3,rep(0,10-3)), ncol=1) + X[,1]**2 + rnorm(1000) * 0.1
 Y = rbinom(n, 1, exp(logit.x)/(1+exp(logit.x)))
 Z = data.frame(X[,1:2])
 glm.mdl = glm(Y~., data = data.frame(X), family='binomial')
-cond.inf(glm.mdl, Z, 2)
+cond.inf(glm.mdl, Z, c(1,2))
+cond.inf(glm.mdl, Z, c("X1", "X2"))
 
 }
