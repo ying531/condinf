@@ -69,6 +69,8 @@ Summary of conditional inference
 (Intercept) 0.0001085111        0.1081838      0.9746966       0.1081838     0.9746966
 ```
 
+In the above summary, `Estimate` is the original estimator, `Cond. Std. Err` is the estimated standard error for inferring the conditional parameter, and `Cond. Pr(>|z|)` is the p-value for testing whether the conditional parameter is zero. `Sup. Std. Error` and `Sup. Pr(>|z|)` are the standard error and p-value for standard super-population inference. 
+
 
 
 The following example conducts conditional inference for a misspecified linear model. In this case, the inference for the conditional parameter can be different from that for the super-population parameter (see the `cond.std.err` for conditional inference and `std.err` for super-population inference). The regression algorithm is `grf` and we focus on the coefficients for `"X1"` and `"X2"`.
