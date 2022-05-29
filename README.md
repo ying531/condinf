@@ -23,6 +23,8 @@ cond.inf(
 )
 ```
 
+This function prints the summary of conditional inference on the specified coefficients, and return a list of results as described in the following. 
+
 | Arguments      | Description                                                  |
 | -------------- | ------------------------------------------------------------ |
 | `model`        | An object returned from lm() or glm() functions              |
