@@ -5,21 +5,20 @@
 \title{Conditional inference}
 \usage{
 cond.inf(
-  model,
-  Z,
-  param,
+  object,
+  cond.df,
+  param = NULL,
   alg = "loess",
   random.seed = NULL,
   other.params = NULL,
-  folds = NULL
+  folds = NULL,
+  verbose = TRUE
 )
 }
 \arguments{
-\item{model}{An object returned from lm() or glm() functions}
+\item{object}{An lm() or glm() object}
 
-\item{Z}{A dataframe for the conditioning set}
-
-\item{param}{A vector of coefficients to conduct conditional inference; can be a mixture of string name and index}
+\item{param}{Optional, a vector of coefficients to conduct conditional inference; fit all coefficients if not provided; can be a mixture of string name and index}
 
 \item{alg}{Optinal, a string for name of algorithm, current options are 'loess' and 'grf'}
 
@@ -28,6 +27,10 @@ cond.inf(
 \item{other.params}{Optional, other parameters for the regression algorithm; can include span and degree for loess}
 
 \item{folds}{Optional, a list of two folds of indices for sample splitting; can be useful to control sample splitting}
+
+\item{verbose}{Optional, whether or not to print summary of inference; TRUE by default}
+
+\item{df.cond}{A dataframe for the conditioning set}
 }
 \value{
 Standard error for conditional parameter, super-population parameter, fitted empirical parameter, confidence interval for conditional parameter
@@ -47,7 +50,7 @@ logit.x = X \%*\% matrix(c(1,2,3,rep(0,10-3)), ncol=1) + X[,1]**2 + rnorm(1000) 
 Y = rbinom(n, 1, exp(logit.x)/(1+exp(logit.x)))
 Z = data.frame(X[,1:2])
 glm.mdl = glm(Y~., data = data.frame(X), family='binomial')
-cond.inf(glm.mdl, Z, c(1,2))
-cond.inf(glm.mdl, Z, c("X1", "X2"))
+cond.inf(glm.mdl, cond.df=Z)
+cond.inf(glm.mdl, cond.df=Z, c(1, "X1", "X2"), alg='grf')
 
 }

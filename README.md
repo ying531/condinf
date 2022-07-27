@@ -13,9 +13,9 @@ R package that implements conditional inference of parameters from lm and glm mo
 
 ```
 cond.inf(
-  model,
-  Z,
-  param,
+  object,
+  df.cond,
+  param = NULL,
   alg = "loess",
   random.seed = NULL,
   other.params = NULL,
@@ -28,12 +28,13 @@ This function wraps around any `lm()` or `glm()` model. It prints the summary of
 | Arguments      | Description                                                  |
 | -------------- | ------------------------------------------------------------ |
 | `model`        | An object returned from lm() or glm() functions              |
-| `Z`            | A dataframe for the conditioning set                         |
-| `param`        | A vector of coefficients to conduct conditional inference; can be a mixture of string name and index |
-| `alg`          | Optinal, a string for name of algorithm, current options are 'loess' and 'grf' |
+| `df.cond`      | A dataframe for the conditioning set                         |
+| `param`        | Optional, a vector of coefficients to conduct conditional inference; default to fit all coefficients if not provided; can be a mixture of string name and index |
+| `alg`          | Optional, a string for name of algorithm, current options are 'loess' and 'grf' |
 | `random.seed`  | Optional, random seed for sample splitting                   |
 | `other.params` | Optional, other parameters for the regression algorithm; can include span and degree for loess |
 | `folds`        | Optional, a list of two folds of indices for sample splitting; can be useful to control sample splitting |
+| `verbose`      | Optional, whether or not to print summary of conditional inference; default `TRUE` |
 
 To use `alg = 'grf'` as the regressor, the R package `grf` is required to be installed.
 
@@ -44,6 +45,7 @@ To use `alg = 'grf'` as the regressor, the R package `grf` is required to be ins
 | `fitted.coef`  | Fitted (empirical) coefficient from the model                |
 | `cond.ci.low`  | Lower 0.95-confidence bound for conditional parameter        |
 | `cond.ci.upp`  | Upper 0.95-confidence bound for conditional parameter        |
+| `summary`      | Summary table of the model fitting results; the printed result for `verbose=TRUE` |
 
 
 
@@ -61,7 +63,7 @@ The following example works out conditional inference of linear regression coeff
 > Y = X %*% matrix(c(1,2,3,rep(0,10-3)), ncol=1) + rnorm(1000) * 0.1
 > Z = data.frame(X[,1:2])
 > lm.mdl = lm(Y~., data = data.frame(X)) 
-> cond.inf(lm.mdl, Z, param=1)
+> cond.inf(lm.mdl, df.cond=Z, param=1)
 
 Summary of conditional inference
 
@@ -80,7 +82,7 @@ The following example conducts conditional inference for a misspecified linear m
 > Y = X %*% matrix(c(1,2,3,rep(0,10-3)), ncol=1) + X[,1]**2 + rnorm(1000) * 0.1
 > Z = data.frame(X[,1:2])
 > lm.mdl = lm(Y~., data = data.frame(X))
-> cond.inf(lm.mdl, Z, c("X1", "X2"), alg='grf')
+> cond.inf(lm.mdl, df.cond=Z, param=c("X1", "X2"), alg='grf')
 
 Summary of conditional inference
 
@@ -101,7 +103,7 @@ The following example works out conditional inference for parameters from a well
 > Y = rbinom(1000, 1, exp(logit.x)/(1+exp(logit.x)))
 > Z = data.frame(X[,1:2])
 > glm.mdl = glm(Y~., data = data.frame(X), family='binomial')
-> cond.inf(glm.mdl, Z, 2)
+> cond.inf(glm.mdl, df.cond=Z, 2)
 
 Summary of conditional inference
 
@@ -117,7 +119,7 @@ This is an example of conditional inference for parameters from a misspecified l
 > Y = rbinom(n, 1, exp(logit.x)/(1+exp(logit.x)))
 > Z = data.frame(X[,1:2])
 > glm.mdl = glm(Y~., data = data.frame(X), family='binomial')
-> cond.inf(glm.mdl, Z, c("X3", 3))
+> cond.inf(glm.mdl, df.cond=Z, c("X3", 3))
 
 Summary of conditional inference
 

@@ -1,4 +1,4 @@
-Package: CondInfer
+Package: condinf
 Type: Package
 Title: Conditional inference package
 Version: 0.0.1.0

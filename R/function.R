@@ -1,13 +1,14 @@
 #' Conditional inference  
 #'
 #' Conditional inference for lm and glm models
-#' @param model An object returned from lm() or glm() functions
-#' @param Z A dataframe for the conditioning set
-#' @param param A vector of coefficients to conduct conditional inference; can be a mixture of string name and index
+#' @param object An lm() or glm() object
+#' @param df.cond A dataframe for the conditioning set
+#' @param param Optional, a vector of coefficients to conduct conditional inference; fit all coefficients if not provided; can be a mixture of string name and index
 #' @param alg Optinal, a string for name of algorithm, current options are 'loess' and 'grf'
 #' @param random.seed Optional, random seed for sample splitting
 #' @param other.params Optional, other parameters for the regression algorithm; can include span and degree for loess
 #' @param folds Optional, a list of two folds of indices for sample splitting; can be useful to control sample splitting
+#' @param verbose Optional, whether or not to print summary of inference; TRUE by default
 #' @return Standard error for conditional parameter, super-population parameter, fitted empirical parameter, confidence interval for conditional parameter
 #' @examples 
 #' X = matrix(rnorm(1000*10), nrow=1000)
@@ -21,27 +22,30 @@
 #' Y = rbinom(n, 1, exp(logit.x)/(1+exp(logit.x)))
 #' Z = data.frame(X[,1:2])
 #' glm.mdl = glm(Y~., data = data.frame(X), family='binomial')
-#' cond.inf(glm.mdl, Z, c(1,2))
-#' cond.inf(glm.mdl, Z, c("X1", "X2"))
+#' cond.inf(glm.mdl, cond.df=Z)
+#' cond.inf(glm.mdl, cond.df=Z, c(1, "X1", "X2"), alg='grf')
 #' 
 #' @export
-cond.inf <- function(model,Z,param,alg="loess",
-                     random.seed=NULL,other.params=NULL,folds=NULL){
-  infl = influence(model)
-  coefs = coef(model)
+cond.inf <- function(object,cond.df,param=NULL,alg="loess",
+                     random.seed=NULL,other.params=NULL,
+                     folds=NULL,verbose=TRUE){
+  infl = influence(object)
+  coefs = coef(object)
   if (!is.null(random.seed)){
     set.seed(random.seed)
   }
   
+  # conditional inference for all coefficients by default
+  if (is.null(param)){param = 1:length(object$coefficients)}
   names = param
   
   for (i.par in 1:length(param)){
     if (!is.na(suppressWarnings(as.integer(param[i.par])))){
-      names[i.par] = names(model$coefficients)[as.integer(param[i.par])]
+      names[i.par] = names(object$coefficients)[as.integer(param[i.par])]
     }
   }
   
-  n = length(model$fitted.values)
+  n = length(object$fitted.values)
   infl.vals = matrix(n * infl$coefficients[,names], ncol=length(param))
   fitted.coef = coefs[names]
   hat.sigmas = rep(0, length(param))
@@ -98,13 +102,17 @@ cond.inf <- function(model,Z,param,alg="loess",
                           "Sup. Std. Error", "Sup. Pr(>|z|)")
   rownames(ret_table) = names
   
-  cat("\n")
-  cat("Summary of conditional inference")
-  cat("\n\n")
-  print(ret_table)
-  cat("\n")
+  if (verbose){
+    cat("\n")
+    cat("Summary of conditional inference")
+    cat("\n\n")
+    print(ret_table)
+    cat("\n")
+  }
+  
   
   invisible(list("cond.std.err" = hat.sigmas, "std.err" = sup.sds,
               "fitted.coef" = fitted.coef, 
-              "cond.ci.low" = ci.lows, "cond.ci.upp" = ci.his))
+              "cond.ci.low" = ci.lows, "cond.ci.upp" = ci.his,
+              "summary" = ret_table))
 }
