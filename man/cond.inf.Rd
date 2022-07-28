@@ -6,7 +6,7 @@
 \usage{
 cond.inf(
   object,
-  cond.df = NULL,
+  cond.data = NULL,
   param = NULL,
   alg = "loess",
   random.seed = NULL,
@@ -17,6 +17,8 @@ cond.inf(
 }
 \arguments{
 \item{object}{An lm() or glm() object}
+
+\item{cond.data}{Optional, a dataframe for the conditioning set; set as all covariates in the lm() or glm() object formula if not provided}
 
 \item{param}{Optional, a vector of coefficients to conduct conditional inference; fit all coefficients if not provided; can be a mixture of string name and index}
 
@@ -29,8 +31,6 @@ cond.inf(
 \item{folds}{Optional, a list of two folds of indices for sample splitting; can be useful to control sample splitting}
 
 \item{verbose}{Optional, whether or not to print summary of inference; TRUE by default}
-
-\item{df.cond}{Optional, a dataframe for the conditioning set; set as all covariates in the lm() or glm() object formula if not provided}
 }
 \value{
 Standard error for conditional parameter, super-population parameter, fitted empirical parameter, confidence interval for conditional parameter
@@ -50,7 +50,7 @@ logit.x = X \%*\% matrix(c(1,2,3,rep(0,10-3)), ncol=1) + X[,1]**2 + rnorm(1000) 
 Y = rbinom(n, 1, exp(logit.x)/(1+exp(logit.x)))
 Z = data.frame(X[,1:2])
 glm.mdl = glm(Y~., data = data.frame(X), family='binomial')
-cond.inf(glm.mdl, cond.df=Z)
-cond.inf(glm.mdl, cond.df=Z, c(1, "X1", "X2"), alg='grf')
+cond.inf(glm.mdl, cond.data=Z)
+cond.inf(glm.mdl, cond.data=Z, c(1, "X1", "X2"), alg='grf')
 
 }
