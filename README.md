@@ -14,7 +14,7 @@ R package that implements conditional inference of parameters from lm and glm mo
 ```
 cond.inf(
   object,
-  df.cond,
+  df.cond = NULL,
   param = NULL,
   alg = "loess",
   random.seed = NULL,
@@ -27,8 +27,8 @@ This function wraps around any `lm()` or `glm()` model. It prints the summary of
 
 | Arguments      | Description                                                  |
 | -------------- | ------------------------------------------------------------ |
-| `model`        | An object returned from lm() or glm() functions              |
-| `df.cond`      | A dataframe for the conditioning set                         |
+| `object`       | An object returned from lm() or glm() functions              |
+| `df.cond`      | Optional (recommend to provide), a dataframe for the conditioning set; set as all covariates fitted in `object` if not provided |
 | `param`        | Optional, a vector of coefficients to conduct conditional inference; default to fit all coefficients if not provided; can be a mixture of string name and index |
 | `alg`          | Optional, a string for name of algorithm, current options are 'loess' and 'grf' |
 | `random.seed`  | Optional, random seed for sample splitting                   |
@@ -36,7 +36,7 @@ This function wraps around any `lm()` or `glm()` model. It prints the summary of
 | `folds`        | Optional, a list of two folds of indices for sample splitting; can be useful to control sample splitting |
 | `verbose`      | Optional, whether or not to print summary of conditional inference; default `TRUE` |
 
-To use `alg = 'grf'` as the regressor, the R package `grf` is required to be installed.
+To use `alg = 'grf'` as the regressor, the R package `grf` is required to be installed. Also, if you do not specify `alg` or set `alg = 'loess'`, then the column dimension of `df.cond` should be no greater than 3.
 
 | Output         | Description                                                  |
 | -------------- | ------------------------------------------------------------ |

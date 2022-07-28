@@ -6,7 +6,7 @@
 \usage{
 cond.inf(
   object,
-  cond.df,
+  cond.df = NULL,
   param = NULL,
   alg = "loess",
   random.seed = NULL,
@@ -30,7 +30,7 @@ cond.inf(
 
 \item{verbose}{Optional, whether or not to print summary of inference; TRUE by default}
 
-\item{df.cond}{A dataframe for the conditioning set}
+\item{df.cond}{Optional, a dataframe for the conditioning set; set as all covariates in the lm() or glm() object formula if not provided}
 }
 \value{
 Standard error for conditional parameter, super-population parameter, fitted empirical parameter, confidence interval for conditional parameter
